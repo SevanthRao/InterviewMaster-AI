@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useAuth } from "../hooks/useAuth"
 
@@ -14,14 +14,15 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await handleRegister( username, email, password )
+    await handleRegister({ username, email, password })
+    navigate("/")
   }
 
   if (loading) {
-    return <main className='min-h-screen flex items-center justify-center bg-linear-to-br from-[#0f0f0f] via-[#1a1a1a] to-[#000000]'>
+    return (<main className='min-h-screen flex items-center justify-center bg-linear-to-br from-[#0f0f0f] via-[#1a1a1a] to-[#000000]'>
       <h1 className='text-4xl font-semibold text-white text-bold'>Loading.........</h1>
     </main>
-  }
+  )}
 
 
 
