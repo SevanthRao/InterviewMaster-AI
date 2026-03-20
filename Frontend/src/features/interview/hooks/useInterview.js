@@ -51,7 +51,7 @@ export const useInterview = () => {
         setloading(true)
         let response = null
         try {
-            const response = await getAllInterviewReports()
+            response = await getAllInterviewReports()
             setReports(response.interviewReports)
         }
         catch (err) {
