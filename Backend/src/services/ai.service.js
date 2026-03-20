@@ -27,7 +27,8 @@ const interviewReportSchema = z.object({
         day: z.number(),
         focus: z.string(),
         tasks: z.array(z.string())
-    }))
+    })),
+    title: z.string()
 })
 
 // Explicit JSON Schema sent to Gemini for structured output
@@ -98,6 +99,10 @@ const interviewReportJsonSchema = {
                 },
                 required: ["day", "focus", "tasks"],
             },
+        },
+        title: {
+            type: "string",
+            description: "A title for the interview report that summarizes the overall assessment of the candidate"
         }
     },
     required: [
@@ -106,6 +111,7 @@ const interviewReportJsonSchema = {
         "behavioralQuestions",
         "skillGaps",
         "preparationPlan",
+        "title"
     ],
 }
 
