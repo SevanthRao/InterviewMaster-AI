@@ -1,6 +1,6 @@
 import { useContext, useEffect } from "react"
 import  { InterviewContext } from "../interview.context"
-import { generateInterviewReport, getInterviewReportById, getAllInterviewReports } from "../services/interview.api"
+import { generateInterviewReport, getInterviewReportById, getAllInterviewReports, generateResumePDF } from "../services/interview.api"
 import { useParams } from "react-router"
 
 
@@ -63,6 +63,27 @@ export const useInterview = () => {
             return response.interviewReports
     }
 
+    const handleGenerateResumePDF = async (interviewReportID) => {
+        setloading(true)
+        let response = null
+        try {
+            response = await generateResumePDF(interviewReportID)
+            const url = window.URL.createObjectURL(new Blob([response], { type: "application/pdf" }))
+            const link = document.createElement("a")
+            link.href = url
+            link.setAttribute("download", `resume_${interviewReportID}.pdf`)
+            document.body.appendChild(link)
+            link.click()
+        }
+        catch (err) {
+            console.log(err)
+        }
+        finally {
+            setloading(false)
+        }
+        return response
+    }
+
     useEffect(() => {
         if (interviewId) {
             handleGetInterviewReportById(interviewId)
@@ -71,6 +92,6 @@ export const useInterview = () => {
         }
     }, [interviewId])
 
-    return { loading, report, reports, handlegenerateInterviewReport, handleGetInterviewReportById, handleGetAllInterviewReports }
+    return { loading, report, reports, handlegenerateInterviewReport, handleGetInterviewReportById, handleGetAllInterviewReports, handleGenerateResumePDF }
 
 }

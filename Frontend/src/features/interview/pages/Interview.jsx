@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useInterview } from '../hooks/useInterview';
 import { useAuth } from '../../auth/hooks/useAuth'
+import { useParams } from "react-router"
+
 
 const NAV_ITEMS = [
   { id: 'technical', label: 'Technical' },
@@ -12,8 +14,15 @@ const NAV_ITEMS = [
 const Interview = () => {
   const [activeNav, setActiveNav] = useState('technical')
   const navigate = useNavigate()
-  const { report, loading } = useInterview()
+  const { report, loading, handleGenerateResumePDF, handleGetInterviewReportById } = useInterview()
   const { handleLogout, loading: authLoading } = useAuth()
+  const { interviewId } = useParams()
+  
+  useEffect(() => {
+    if (interviewId) {
+      handleGetInterviewReportById(interviewId)
+        }
+  }, [interviewId])
 
   if (loading || !report) {
     return (
@@ -24,7 +33,7 @@ const Interview = () => {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-6">
+    <main className="min-h-screen bg-gray-900 text-white p-6">
 
       <div className="max-w-7xl mx-auto mb-4 flex items-center justify-between">
         <button
@@ -35,6 +44,16 @@ const Interview = () => {
           <span aria-hidden="true">←</span>
           <span>Back</span>
         </button>
+
+        {/* Heading */}
+        <h1 className="text-3xl md:text-4xl font-semibold mb-10 text-center tracking-wide">
+          <span className="bg-linear-to-r from-purple-400 via-blue-400 to-indigo-400 text-transparent bg-clip-text">
+            InterviewMaster
+          </span>
+          <span className="block text-gray-400 text-base mt-2">
+            Your AI Interview Assistant
+          </span>
+        </h1>
 
         <button
           type="button"
@@ -67,6 +86,10 @@ const Interview = () => {
               </button>
             ))}
           </div>
+
+          <button className='inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition-all duration-200 text-sm text-gray-200'
+            onClick={() => handleGenerateResumePDF(interviewId)}
+          >Dowmload AI Generated Resume</button>
         </div>
 
         {/* CENTER */}
