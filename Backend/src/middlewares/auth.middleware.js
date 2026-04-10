@@ -2,27 +2,28 @@ const jwt = require("jsonwebtoken");
 const tokenBlacklistModel = require("../models/blacklist.model");
 
 async function authUser (req, res, next) {
-    const token = req.cookies.token;
+    try {
+        const token = req.cookies.token;
 
-    if (!token) {
-        return res.status(401).json({
-            message: "Unauthorized, token not found"
-        })
-    }
+        if (!token) {
+            return res.status(401).json({
+                message: "Unauthorized, token not found"
+            })
+        }
 
-    const isTokenBlacklisted = await tokenBlacklistModel.findOne({ token });
+        const isTokenBlacklisted = await tokenBlacklistModel.findOne({ token });
 
-    if (isTokenBlacklisted) {
-        return res.status(401).json({
-            message: "Token Is invalid"
-        })
-    }
+        if (isTokenBlacklisted) {
+            return res.status(401).json({
+                message: "Token is invalid"
+            })
+        }
 
-    try{
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
-    } catch(err){
+    } catch(err) {
+        console.error("Auth middleware error:", err.message);
         return res.status(401).json({
             message: "Unauthorized, invalid token"
         })

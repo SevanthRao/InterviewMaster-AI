@@ -1,30 +1,53 @@
-const pdfParse = require("pdf-parse")
+
 const mongoose = require("mongoose")
-const {generateInterviewReport,  generateResumePDF } = require("../services/ai.service")
+const { generateInterviewReport, generateResumePDF } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
+const sessionModel = require("../models/session.model")
 
 
 /**
- * @description Generate new interview report for a candidate based on their resume, self description and job description.
+ * @description Generate interview report (technical + behavioral + roadmap) for a session.
  * @access private
  */
-async function generateInterviewController(req, res){
+async function generateInterviewController(req, res) {
     try {
-        const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+        const { sessionId } = req.params
 
-        const { selfDescription, jobDescription } = req.body
+        if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+            return res.status(400).json({ message: "Invalid session ID" })
+        }
+
+        const session = await sessionModel.findOne({
+            _id: sessionId,
+            user: req.user.id
+        })
+
+        if (!session) {
+            return res.status(404).json({ message: "Session not found" })
+        }
+
+        // Check if report already exists for this session
+        const existingReport = await interviewReportModel.findOne({
+            session: sessionId,
+            user: req.user.id
+        })
+
+        if (existingReport) {
+            return res.status(200).json({
+                message: "Interview report already exists",
+                interviewReport: existingReport
+            })
+        }
 
         const interviewReportByAi = await generateInterviewReport({
-            resume: resumeContent.text,
-            selfDescription,
-            jobDescription
+            resume: session.resume,
+            selfDescription: session.selfDescription,
+            jobDescription: session.jobDescription
         })
 
         const interviewReport = await interviewReportModel.create({
+            session: sessionId,
             user: req.user.id,
-            resume: resumeContent.text,
-            selfDescription,
-            jobDescription,
             ...interviewReportByAi
         })
 
@@ -32,102 +55,102 @@ async function generateInterviewController(req, res){
             message: "Interview report generated successfully",
             interviewReport
         })
-    }
-    catch (err) {
-        console.log(err)
+    } catch (err) {
+        console.error("Generate interview error:", err.message)
+
+        if (err.message.includes("Failed to generate interview report from AI")) {
+            return res.status(502).json({ message: "AI service is temporarily unavailable. Please try again later." })
+        }
+
+        res.status(500).json({ message: "Failed to generate interview report. Please try again." })
     }
 }
 
+
 /**
- * @description Get interview report by interview ID.
+ * @description Get interview report for a session.
  * @access private
  */
-async function getInterviewByIdController(req, res){
+async function getInterviewBySessionController(req, res) {
     try {
-        const { interviewId } = req.params
+        const { sessionId } = req.params
 
-        if (!mongoose.Types.ObjectId.isValid(interviewId)) {
-            return res.status(400).json({
-                message: "Invalid interview ID"
-            })
+        if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+            return res.status(400).json({ message: "Invalid session ID" })
         }
 
         const interviewReport = await interviewReportModel.findOne({
-            _id: interviewId,
+            session: sessionId,
             user: req.user.id
         })
 
         if (!interviewReport) {
-            return res.status(404).json({
-                message: "Interview report not found"
-            })
+            return res.status(404).json({ message: "Interview report not found. Generate one first." })
         }
 
         res.status(200).json({
             message: "Interview report fetched successfully",
             interviewReport
         })
-    } 
-    catch (err) {
-        console.log(err)
+    } catch (err) {
+        console.error("Get interview error:", err.message)
+        res.status(500).json({ message: "Internal server error" })
     }
 }
 
 
 /**
- * @description Get all interview reports of the logged in user.
+ * @description Generate PDF resume for a session.
  * @access private
  */
-async function getAllInterviewsController(req, res){
-    try {
-        const interviewReports = await interviewReportModel.find({
-            user: req.user.id
-        }).sort({ createdAt: -1 }).select("-resume -selfDescription -jobDescription -__v -technicalQuestions -behavioralQuestions -skillGaps -preparationPlan")
-
-        res.status(200).json({
-            message: "Interview reports fetched successfully",
-            interviewReports
-        })
-    } 
-    catch (err) {
-        console.log(err)
-    }
-}
-
-
-/**
- * @description Generate PDF for a candidate's resume based on user selfDescription, jobDescription and resume.
- */
 async function generateResumePDFController(req, res) {
-        const { interviewReportID } = req.params
+    try {
+        const { sessionId } = req.params
 
-        const interviewReport = await interviewReportModel.findById(interviewReportID)
-
-        if (!interviewReport) {
-            return res.status(404).json({
-                message: "Interview report not found"
-            })
+        if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+            return res.status(400).json({ message: "Invalid session ID" })
         }
 
-        const { resume, selfDescription, jobDescription } = interviewReport
-
-        const pdfBuffer = await generateResumePDF({
-            resume,
-            selfDescription,
-            jobDescription
+        const session = await sessionModel.findOne({
+            _id: sessionId,
+            user: req.user.id
         })
+
+        if (!session) {
+            return res.status(404).json({ message: "Session not found" })
+        }
+
+        const resumeDocument = await generateResumePDF({
+            resume: session.resume,
+            selfDescription: session.selfDescription,
+            jobDescription: session.jobDescription,
+            html: session.refinedResumeHtml
+        })
+
+        if (resumeDocument.html && resumeDocument.html !== session.refinedResumeHtml) {
+            session.refinedResumeHtml = resumeDocument.html
+            await session.save()
+        }
 
         res.set({
             "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename=resume_${interviewReportID}.pdf`
+            "Content-Disposition": `attachment; filename=resume_${sessionId}.pdf`
         })
-        res.send(pdfBuffer)
+        res.send(resumeDocument.pdfBuffer)
+    } catch (err) {
+        console.error("Generate resume PDF error:", err.message)
+
+        if (err.message.includes("Failed to generate resume PDF")) {
+            return res.status(502).json({ message: "AI service is temporarily unavailable. Please try again later." })
+        }
+
+        res.status(500).json({ message: "Failed to generate resume PDF. Please try again." })
+    }
 }
 
-module.exports = {  
+
+module.exports = {
     generateInterviewController,
-    getInterviewByIdController,
-    getAllInterviewsController,
+    getInterviewBySessionController,
     generateResumePDFController
 }
-
