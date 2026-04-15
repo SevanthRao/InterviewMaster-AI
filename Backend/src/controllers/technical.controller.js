@@ -2,6 +2,7 @@ const mongoose = require("mongoose")
 const { generateTechnicalDSAQuestions } = require("../services/ai.service")
 const technicalTestModel = require("../models/technicalTest.model")
 const sessionModel = require("../models/session.model")
+const { prependHistoryEntry } = require("../utils/session-history")
 
 /**
  * @description Generate technical DSA test for a session.
@@ -40,6 +41,13 @@ async function generateTechnicalTestController(req, res) {
             user: req.user.id,
             questions: questionsWithDefaults
         })
+
+        prependHistoryEntry(session, {
+            type: "technical_generated",
+            label: "Technical test generated",
+            detail: `${questions.length} technical questions were generated.`
+        })
+        await session.save()
 
         // Return test without correct answers
         const safeTest = technicalTest.toObject()

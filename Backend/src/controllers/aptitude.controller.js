@@ -2,6 +2,7 @@ const mongoose = require("mongoose")
 const { generateAptitudeQuestions } = require("../services/ai.service")
 const aptitudeTestModel = require("../models/aptitudeTest.model")
 const sessionModel = require("../models/session.model")
+const { prependHistoryEntry } = require("../utils/session-history")
 
 /**
  * @description Generate aptitude test for a session.
@@ -54,6 +55,13 @@ async function generateAptitudeTestController(req, res) {
             totalQuestions: questions.length,
             questions: questionsWithDefaults
         })
+
+        prependHistoryEntry(session, {
+            type: "aptitude_generated",
+            label: "Aptitude test generated",
+            detail: `${questions.length} aptitude questions generated with a ${parsedTimeLimit}-minute limit.`
+        })
+        await session.save()
 
         // Return test without correct answers (don't reveal during test)
         const safeTest = aptitudeTest.toObject()

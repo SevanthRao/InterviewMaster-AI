@@ -5,46 +5,10 @@ const sessionModel = require("../models/session.model")
 const interviewReportModel = require("../models/interviewReport.model")
 const aptitudeTestModel = require("../models/aptitudeTest.model")
 const technicalTestModel = require("../models/technicalTest.model")
-
-const SKILL_GAP_SEVERITIES = new Set(["low", "medium", "high"])
+const { prependHistoryEntry } = require("../utils/session-history")
 
 function normalizeText(value) {
     return typeof value === "string" ? value.trim() : ""
-}
-
-function parseMatchScore(value) {
-    const parsedValue = Number(value)
-
-    if (!Number.isFinite(parsedValue)) {
-        return null
-    }
-
-    return Math.min(100, Math.max(0, Math.round(parsedValue)))
-}
-
-function normalizeSkillGaps(skillGaps) {
-    if (!Array.isArray(skillGaps)) {
-        return { error: "Skill gaps must be an array" }
-    }
-
-    const normalizedSkillGaps = []
-
-    for (const skillGap of skillGaps) {
-        const skill = normalizeText(skillGap?.skill)
-        const severity = normalizeText(skillGap?.severity).toLowerCase()
-
-        if (!skill) {
-            continue
-        }
-
-        if (!SKILL_GAP_SEVERITIES.has(severity)) {
-            return { error: "Each skill gap severity must be low, medium, or high" }
-        }
-
-        normalizedSkillGaps.push({ skill, severity })
-    }
-
-    return { value: normalizedSkillGaps }
 }
 
 function isValidSessionId(sessionId) {
@@ -111,7 +75,13 @@ async function createSessionController(req, res) {
             jobDescription,
             title: analysis.title,
             matchScore: analysis.matchScore,
-            skillGaps: analysis.skillGaps
+            skillGaps: analysis.skillGaps,
+            history: [{
+                type: "session_created",
+                label: "Resume analyzed",
+                detail: "Session created from uploaded resume.",
+                createdAt: new Date()
+            }]
         })
 
         res.status(201).json({
@@ -161,27 +131,14 @@ async function updateSessionController(req, res) {
             return res.status(400).json({ message: "Invalid session ID" })
         }
 
-        const title = normalizeText(req.body.title)
         const resume = normalizeText(req.body.resume)
         const selfDescription = normalizeText(req.body.selfDescription)
         const jobDescription = normalizeText(req.body.jobDescription)
-        const matchScore = parseMatchScore(req.body.matchScore)
-        const normalizedSkillGaps = normalizeSkillGaps(req.body.skillGaps)
 
-        if (!title || !resume || !selfDescription || !jobDescription) {
+        if (!resume || !selfDescription || !jobDescription) {
             return res.status(400).json({
-                message: "Title, resume, self description, and job description are required"
+                message: "Resume, self description, and job description are required"
             })
-        }
-
-        if (matchScore === null) {
-            return res.status(400).json({
-                message: "Match score must be a number between 0 and 100"
-            })
-        }
-
-        if (normalizedSkillGaps.error) {
-            return res.status(400).json({ message: normalizedSkillGaps.error })
         }
 
         const session = await findOwnedSession(sessionId, req.user.id)
@@ -190,23 +147,39 @@ async function updateSessionController(req, res) {
             return res.status(404).json({ message: "Session not found" })
         }
 
-        session.title = title
+        const analysis = await analyzeResume({
+            resume,
+            selfDescription,
+            jobDescription
+        })
+
         session.resume = resume
         session.selfDescription = selfDescription
         session.jobDescription = jobDescription
-        session.matchScore = matchScore
-        session.skillGaps = normalizedSkillGaps.value
+        session.title = analysis.title
+        session.matchScore = analysis.matchScore
+        session.skillGaps = analysis.skillGaps
         session.refinedResumeHtml = ""
+        prependHistoryEntry(session, {
+            type: "session_updated",
+            label: "Session data updated",
+            detail: "Source descriptions were edited and the session was re-analyzed."
+        })
 
         await session.save()
         await invalidateGeneratedArtifacts(sessionId, req.user.id)
 
         res.status(200).json({
-            message: "Session updated successfully. Generated materials were cleared and should be regenerated.",
+            message: "Session updated and re-analyzed successfully. Generated materials were cleared and should be regenerated.",
             session
         })
     } catch (err) {
         console.error("Update session error:", err.message)
+
+        if (err.message.includes("Failed to analyze resume")) {
+            return res.status(502).json({ message: "AI service is temporarily unavailable. Please try again later." })
+        }
+
         res.status(500).json({ message: "Failed to update session. Please try again." })
     }
 }

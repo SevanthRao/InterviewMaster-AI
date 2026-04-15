@@ -241,6 +241,11 @@ const Home = () => {
                     <p className="text-gray-500 text-xs mt-1">
                       {new Date(session.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
+                    {session.history?.[0] && (
+                      <p className="text-gray-400 text-xs mt-2">
+                        Recent: {session.history[0].label}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-yellow-300 font-bold text-lg">{session.matchScore}%</span>

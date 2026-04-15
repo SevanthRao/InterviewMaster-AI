@@ -22,6 +22,14 @@ The current implementation follows this main flow:
    - technical test
    - AI resume PDF
 
+Recent history is saved on the session for:
+- resume analyzed
+- session updated
+- interview approach generated
+- aptitude test generated
+- technical test generated
+- AI resume generated
+
 ---
 
 ## 2. Architecture Summary
@@ -114,14 +122,13 @@ Behavior:
   - match score
   - skill gaps
 - Provides editable fields for:
-  - title
-  - match score
   - self description
   - job description
   - resume text
-  - skill gaps
 - Save button persists edits through `PATCH /api/session/:sessionId`.
+- Saving re-analyzes the session to refresh title, match score, and skill gaps.
 - Saving clears previously generated reports/tests so future outputs stay aligned with the latest session data.
+- Dashboard shows recent saved activity history for the session.
 - Provides entry points to all AI features for that session.
 
 ### Interview Approach
@@ -233,7 +240,6 @@ Behavior:
 
 These PRD items are still not fully implemented yet:
 
-- Auto-recalculation flow for match score/title/skill gaps after manual edits.
 - A richer resume management flow such as versioning or editable refined resume HTML.
 - Broader automated coverage beyond the targeted backend tests added in this refinement pass.
 
@@ -242,7 +248,6 @@ These PRD items are still not fully implemented yet:
 ## 7. Suggested Next Improvements
 
 ### High Priority
-- Add an optional "Re-analyze Session" action that regenerates title, match score, and skill gaps from the edited base content.
 - Add a separate endpoint for editing the refined resume HTML directly if resume customization should become part of the product.
 
 ### Medium Priority

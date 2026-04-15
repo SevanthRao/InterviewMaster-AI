@@ -1,8 +1,8 @@
-
 const mongoose = require("mongoose")
 const { generateInterviewReport, generateResumePDF } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 const sessionModel = require("../models/session.model")
+const { prependHistoryEntry } = require("../utils/session-history")
 
 
 /**
@@ -33,6 +33,13 @@ async function generateInterviewController(req, res) {
         })
 
         if (existingReport) {
+            prependHistoryEntry(session, {
+                type: "interview_report_reused",
+                label: "Interview approach opened",
+                detail: "Existing interview approach was reused."
+            })
+            await session.save()
+
             return res.status(200).json({
                 message: "Interview report already exists",
                 interviewReport: existingReport
@@ -50,6 +57,13 @@ async function generateInterviewController(req, res) {
             user: req.user.id,
             ...interviewReportByAi
         })
+
+        prependHistoryEntry(session, {
+            type: "interview_report_generated",
+            label: "Interview approach generated",
+            detail: "Technical, behavioral, and roadmap content was generated."
+        })
+        await session.save()
 
         res.status(201).json({
             message: "Interview report generated successfully",
@@ -129,8 +143,14 @@ async function generateResumePDFController(req, res) {
 
         if (resumeDocument.html && resumeDocument.html !== session.refinedResumeHtml) {
             session.refinedResumeHtml = resumeDocument.html
-            await session.save()
         }
+
+        prependHistoryEntry(session, {
+            type: "resume_generated",
+            label: "AI resume generated",
+            detail: "A refined resume PDF was generated for this session."
+        })
+        await session.save()
 
         res.set({
             "Content-Type": "application/pdf",

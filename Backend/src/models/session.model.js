@@ -14,6 +14,27 @@ const skillGapSchema = new mongoose.Schema({
     _id: false
 })
 
+const sessionHistorySchema = new mongoose.Schema({
+    type: {
+        type: String,
+        required: true
+    },
+    label: {
+        type: String,
+        required: true
+    },
+    detail: {
+        type: String,
+        default: ""
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+}, {
+    _id: false
+})
+
 const sessionSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +67,10 @@ const sessionSchema = new mongoose.Schema({
     refinedResumeHtml: {
         type: String,
         default: ""
+    },
+    history: {
+        type: [sessionHistorySchema],
+        default: []
     }
 }, {
     timestamps: true
