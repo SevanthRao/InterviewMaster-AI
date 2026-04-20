@@ -1,4 +1,4 @@
-# InterviewMaster-AI
+# Interlix
 
 Backend foundation for an AI interview preparation platform.
 
