@@ -5,7 +5,7 @@ import {
   login as loginRequest,
   logout as logoutRequest,
   register as registerRequest,
-} from "./services/auth.api"
+} from "../features/auth/services/auth.api"
 
 export const AuthContext = createContext()
 

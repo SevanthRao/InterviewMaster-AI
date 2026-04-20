@@ -1,4 +1,4 @@
-import { apiClient } from "../../shared/api.client"
+import { apiClient } from "../../../lib/api.client"
 
 export async function register({username, email, password}) {
     const response = await apiClient.post("/api/auth/register", {

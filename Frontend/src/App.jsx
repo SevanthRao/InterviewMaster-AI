@@ -1,14 +1,13 @@
-import { RouterProvider } from 'react-router'
-import { router } from "./app.routes.jsx"
-import { AuthProvider } from './features/auth/auth.context.jsx'
-import { ToastProvider } from './features/shared/toast.context.jsx'
-import ToastContainer from './features/shared/Toast.jsx'
+import { AuthProvider } from "./contexts/auth.context"
+import { ToastProvider } from "./contexts/toast.context"
+import ToastContainer from "./components/Toast"
+import AppRoutes from "./app.routes"
 
-const App = () => {
+function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <AppRoutes />
         <ToastContainer />
       </AuthProvider>
     </ToastProvider>
