@@ -40,32 +40,5 @@ app.use((req, res) => {
     res.status(404).json({ message: "Route not found" })
 })
 
-// Global error handler for multer, JSON parse errors, and other middleware errors
-app.use((err, req, res, next) => {
-    // Handle multer errors
-    if (err.name === "MulterError") {
-        if (err.code === "LIMIT_FILE_SIZE") {
-            return res.status(400).json({ message: "File too large. Maximum size is 3MB." })
-        }
-        return res.status(400).json({ message: err.message })
-    }
-
-    if (err.message === "Only PDF files are allowed") {
-        return res.status(400).json({ message: err.message })
-    }
-
-    // Handle JSON syntax errors (malformed request body)
-    if (err.type === "entity.parse.failed") {
-        return res.status(400).json({ message: "Invalid JSON in request body" })
-    }
-
-    if (err.message === "Not allowed by CORS") {
-        return res.status(403).json({ message: "Origin is not allowed by CORS policy" })
-    }
-
-    console.error("Unhandled error:", err.message);
-    res.status(500).json({ message: "Internal server error" })
-});
-
 
 module.exports = app;

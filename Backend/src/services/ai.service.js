@@ -7,14 +7,10 @@ const PREPARATION_PLAN_DAYS = 7
 const TECHNICAL_QUESTION_COUNT = 5
 const SKILL_GAP_SEVERITIES = new Set(["low", "medium", "high"])
 
-function ensureAIConfigured() {
+function getModel() {
     if (!process.env.GOOGLE_GENAI_API_KEY) {
         throw new Error("Google GenAI API key is not configured")
     }
-}
-
-function getModel() {
-    ensureAIConfigured()
 
     return new ChatGoogleGenerativeAI({
         model: process.env.GOOGLE_GENAI_MODEL || DEFAULT_AI_MODEL,
@@ -534,6 +530,5 @@ module.exports = {
     generateInterviewReport,
     generateAptitudeQuestions,
     generateTechnicalDSAQuestions,
-    generateResumeHtml,
     generateResumePDF
 }
