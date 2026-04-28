@@ -86,7 +86,6 @@ async function generateAptitudeTestController(req, res) {
     }
 }
 
-
 /**
  * @description Get an aptitude test by ID (hides answers if not submitted).
  * @access private

@@ -171,8 +171,8 @@ const SessionDashboard = () => {
 
   if (error || !session || !form) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6"
-        style={{ background: 'var(--bg-primary)' }}>
+      <div className="min-h-screen flex items-center justify-center bg-amber-50 p-6"
+        style={{ background: 'var(--bg)' }}>
         <div className="animate-fade-in-up max-w-md w-full p-8 glass-card text-center">
           <div className="w-16 h-16 mx-auto mb-5 rounded-full flex items-center justify-center"
             style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>

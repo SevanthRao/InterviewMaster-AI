@@ -276,6 +276,8 @@ const technicalDSASchema = z.object({
     })).describe("Array of basic-level DSA and programming questions")
 })
 
+
+//used in session Controller =  createSessionController
 async function analyzeResume({ resume, selfDescription, jobDescription }) {
     const prompt = `Analyze this candidate's resume against the target job.
 
@@ -314,6 +316,7 @@ Return a short title, a numeric match score from 0 to 100, and a concise list of
     }
 }
 
+//used in interview controller
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
     const prompt = `Create an interview preparation report for this candidate.
 
@@ -326,7 +329,7 @@ ${selfDescription}
 Job Description:
 ${jobDescription}
 
-Generate 8 to 10 technical questions, 5 to 6 behavioral questions, and a ${PREPARATION_PLAN_DAYS}-day preparation plan.`
+Generate 5 technical questions, 5 behavioral questions, and a ${PREPARATION_PLAN_DAYS}-day preparation plan.`
 
     try {
         const parsed = await invokeStructuredModel({

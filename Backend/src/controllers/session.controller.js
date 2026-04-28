@@ -30,6 +30,7 @@ async function invalidateGeneratedArtifacts(sessionId, userId) {
     ])
 }
 
+
 async function createSessionController(req, res) {
     try {
         if (!req.file || !req.file.buffer) {

@@ -3,7 +3,7 @@
 
 /* ─── Design Tokens ─── */
 :root {
-  --bg-primary: #0B0F1A;
+  --bg-primary: #000000;
   --bg-surface: #111827;
   --bg-elevated: #1E293B;
   --bg-hover: #263348;
